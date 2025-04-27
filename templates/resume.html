@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Screening AI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: #ffffff10;
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #00e6ac;
+        }
+
+        p, li {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        input[type="file"] {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #000;
+            width: 80%;
+        }
+
+        input[type="submit"] {
+            padding: 12px 24px;
+            background-color: #00e6ac;
+            color: #000;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #00cfa5;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            background-color: #ffffff15;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .result-section h1 {
+            color: #ffd700;
+        }
+
+        .result-section p, .result-section li {
+            color: #e0f7fa;
+        }
+
+        hr {
+            border: 1px solid #00e6ac;
+            margin: 20px 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Resume Screening AI System</h1>
+        <p>This system supports <strong>TXT</strong> and <strong>PDF</strong> resume files. It performs:</p>
+        <ul>
+            <li>Resume Categorization</li>
+            <li>Job Recommendation</li>
+            <li>Information Extraction</li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>Upload Your Resume</h2>
+        <form action="/pred" method="post" enctype="multipart/form-data">
+            <input type="file" name="resume" accept=".pdf, .txt" required>
+            <input type="submit" value="Analyze Resume">
+        </form>
+
+        {% if message %}
+            <p class="text-center">{{ message }}</p>
+        {% endif %}
+
+        {% if predicted_category %}
+        <div class="result-section">
+            <h1>Prediction Results</h1>
+            <p><strong>Category:</strong> {{ predicted_category }}</p>
+            <p><strong>Recommended Job:</strong> {{ recommended_job }}</p>
+
+            <hr>
+
+            <h2>Extracted Information</h2>
+            <p><strong>Name:</strong> {{ name }}</p>
+            <p><strong>Phone:</strong> {{ phone }}</p>
+            <p><strong>Email:</strong> {{ email }}</p>
+
+            {% if extracted_skills %}
+            <h3>Skills:</h3>
+            <ul>
+                {% for skill in extracted_skills %}
+                <li>{{ skill }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No skills found...</p>
+            {% endif %}
+
+            {% if extracted_education %}
+            <h3>Education:</h3>
+            <ul>
+                {% for edu in extracted_education %}
+                <li>{{ edu }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No education found...</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>
