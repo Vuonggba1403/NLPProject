@@ -4,15 +4,27 @@ import re
 import pickle
 import numpy as np
 from load_datasets import load_skills_list, load_education_keywords
+from pathlib import Path
 
 app = Flask(__name__)
 
-# Load models
-best_model_categorization = pickle.load(open('E:/NLPProject/FinalProject/models/best_model_categorization.pkl', 'rb'))
-tfidf_vectorizer_categorization = pickle.load(open('E:/NLPProject/FinalProject/models/tfidf_vectorizer_categorization.pkl', 'rb'))
-gb_classifier_job_recommendation = pickle.load(open('E:/NLPProject/FinalProject/models/gb_classifier_job_recommendation.pkl', 'rb'))
-tfidf_vectorizer_job_recommendation = pickle.load(open('E:/NLPProject/FinalProject/models/tfidf_vectorizer_job_recommendation.pkl', 'rb'))
+BASE_DIR = Path(__file__).resolve().parent
 
+# Xác định đường dẫn đến thư mục models
+MODELS_DIR = BASE_DIR / 'models'
+
+# Load models
+with open(MODELS_DIR / 'best_model_categorization.pkl', 'rb') as f:
+    best_model_categorization = pickle.load(f)
+
+with open(MODELS_DIR / 'tfidf_vectorizer_categorization.pkl', 'rb') as f:
+    tfidf_vectorizer_categorization = pickle.load(f)
+
+with open(MODELS_DIR / 'gb_classifier_job_recommendation.pkl', 'rb') as f:
+    gb_classifier_job_recommendation = pickle.load(f)
+
+with open(MODELS_DIR / 'tfidf_vectorizer_job_recommendation.pkl', 'rb') as f:
+    tfidf_vectorizer_job_recommendation = pickle.load(f)
 # Load datasets from Excel
 skills_list = load_skills_list()
 education_keywords = load_education_keywords()
@@ -48,6 +60,20 @@ def pdf_to_text(file):
         if extracted:
             text += extracted
     return text
+
+# GPA extractor
+def extract_gpa_from_resume(text):
+    gpa_patterns = [
+        r'GPA[:\s]*([0-4]\.\d{1,2}\s*/\s*4\.0)',  # GPA: 3.5/4.0
+        r'GPA[:\s]*([0-4]\.\d{1,2})',              # GPA: 3.5
+        r'([0-4]\.\d{1,2}\s*/\s*4\.0)',             # 3.5/4.0
+        r'([0-4]\.\d{1,2})'           # 3.5/4.0
+    ]
+    for pattern in gpa_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
 
 # Contact info extractors
 def extract_contact_number_from_resume(text):
@@ -107,7 +133,8 @@ def pred():
             'email': extract_email_from_resume(text),
             'extracted_skills': extract_skills_from_resume(text),
             'extracted_education': extract_education_from_resume(text),
-            'name': extract_name_from_resume(text)
+            'name': extract_name_from_resume(text),
+            'gpa': extract_gpa_from_resume(text),
         }
 
         return render_template('resume.html', **data)
