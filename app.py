@@ -20,8 +20,8 @@ with open(MODELS_DIR / 'best_model_categorization.pkl', 'rb') as f:
 with open(MODELS_DIR / 'tfidf_vectorizer_categorization.pkl', 'rb') as f:
     tfidf_vectorizer_categorization = pickle.load(f)
 
-with open(MODELS_DIR / 'gb_classifier_job_recommendation.pkl', 'rb') as f:
-    gb_classifier_job_recommendation = pickle.load(f)
+with open(MODELS_DIR / 'xgboost_model_job_recommendation.pkl', 'rb') as f:
+    xgb_model_data = pickle.load(f)
 
 with open(MODELS_DIR / 'tfidf_vectorizer_job_recommendation.pkl', 'rb') as f:
     tfidf_vectorizer_job_recommendation = pickle.load(f)
@@ -45,12 +45,35 @@ def cleanResume(txt):
 def predict_category(resume_text):
     resume_text = cleanResume(resume_text)
     resume_tfidf = tfidf_vectorizer_categorization.transform([resume_text])
-    return best_model_categorization.predict(resume_tfidf)[0]
+    
+    # Check if best_model_categorization is XGBoost (stored as dictionary)
+    if isinstance(best_model_categorization, dict) and best_model_categorization.get("type") == "xgboost":
+        # For XGBoost, we need to handle the label encoding
+        xgb_model = best_model_categorization["model"]
+        label_encoder = best_model_categorization["label_encoder"]
+        
+        # Get the encoded prediction
+        encoded_pred = xgb_model.predict(resume_tfidf)[0]
+        
+        # Convert back to original category name
+        return label_encoder.inverse_transform([encoded_pred])[0]
+    else:
+        # Standard models (Logistic Regression, Naive Bayes, Random Forest)
+        return best_model_categorization.predict(resume_tfidf)[0]
 
 def job_recommendation(resume_text):
     resume_text = cleanResume(resume_text)
     resume_tfidf = tfidf_vectorizer_job_recommendation.transform([resume_text])
-    return gb_classifier_job_recommendation.predict(resume_tfidf)[0]
+    
+    # Get XGBoost model and label mapping from the loaded data
+    xgb_model = xgb_model_data["model"]
+    label_mapping = xgb_model_data["label_mapping"]
+    
+    # Make prediction with XGBoost (returns encoded value)
+    encoded_pred = xgb_model.predict(resume_tfidf)[0]
+    
+    # Convert encoded prediction back to original job category
+    return label_mapping[encoded_pred]
 
 def pdf_to_text(file):
     reader = PdfReader(file.stream)
