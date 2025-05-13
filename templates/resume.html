@@ -120,10 +120,12 @@
         {% endif %}
 
         {% if predicted_category %}
-        <div class="result-section">
-            <h1>Prediction Results</h1>
+        <div class="result-section">            <h1>Prediction Results</h1>
             <p><strong>Category:</strong> {{ predicted_category }}</p>
             <p><strong>Recommended Job:</strong> {{ recommended_job }}</p>
+            {% if saved_path %}
+            <p><strong>Resume saved at:</strong> {{ saved_path }}</p>
+            {% endif %}
 
             <hr>
 

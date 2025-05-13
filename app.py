@@ -3,6 +3,7 @@ from PyPDF2 import PdfReader
 import re
 import pickle
 import numpy as np
+import os
 from load_datasets import load_skills_list, load_education_keywords
 from pathlib import Path
 
@@ -76,12 +77,16 @@ def job_recommendation(resume_text):
     return label_mapping[encoded_pred]
 
 def pdf_to_text(file):
-    reader = PdfReader(file.stream)
+    # Create a copy of the file stream for reading
+    file_copy = file.stream
+    reader = PdfReader(file_copy)
     text = ''
     for page in reader.pages:
         extracted = page.extract_text()
         if extracted:
             text += extracted
+    # Reset the file pointer for later saving
+    file.seek(0)
     return text
 
 # GPA extractor
@@ -136,21 +141,48 @@ def extract_name_from_resume(text):
 def resume():
     return render_template("resume.html")
 
+def save_resume_file(file, category):
+    # Create the category directory if it doesn't exist
+    save_dir = os.path.join(BASE_DIR, 'Saves', category)
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Save the file with its original name
+    file_path = os.path.join(save_dir, file.filename)
+    
+    # Ensure the file pointer is at the beginning
+    file.seek(0)
+    file.save(file_path)
+    
+    # Return the relative path for display purposes
+    return os.path.join('Saves', category, file.filename)
+
 @app.route('/pred', methods=['POST'])
 def pred():
     if 'resume' in request.files:
         file = request.files['resume']
         filename = file.filename
 
+        if not filename:
+            return render_template('resume.html', message="No file selected.")
+        
         if filename.endswith('.pdf'):
             text = pdf_to_text(file)
         elif filename.endswith('.txt'):
+            # Read the file content
             text = file.read().decode('utf-8')
+            # Reset the file pointer for later saving
+            file.seek(0)
         else:
             return render_template('resume.html', message="Invalid file format. Please upload a PDF or TXT file.")
 
+        # Get the predicted category
+        predicted_category = predict_category(text)
+        
+        # Save the file to the appropriate category folder
+        saved_path = save_resume_file(file, predicted_category)
+
         data = {
-            'predicted_category': predict_category(text),
+            'predicted_category': predicted_category,
             'recommended_job': job_recommendation(text),
             'phone': extract_contact_number_from_resume(text),
             'email': extract_email_from_resume(text),
@@ -158,6 +190,7 @@ def pred():
             'extracted_education': extract_education_from_resume(text),
             'name': extract_name_from_resume(text),
             'gpa': extract_gpa_from_resume(text),
+            'saved_path': saved_path,
         }
 
         return render_template('resume.html', **data)
